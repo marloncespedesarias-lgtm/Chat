@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Chat Privado</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #E5DDD5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Burbujas tipo iPhone */
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 18px; font-size: 16px; line-height: 1.4; position: relative; }
+        .sent { align-self: flex-end; background: #DCF8C6; color: #000; border-bottom-right-radius: 4px; }
+        .received { align-self: flex-start; background: white; color: #000; border-bottom-left-radius: 4px; }
+        
+        .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; }
+        input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; font-size: 16px; }
+        button { background: #007AFF; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="chat-box">
+        <div class="msg received">¡Hola! Bienvenido a tu chat privado.</div>
+        <div class="msg sent">¿Listo para conectar Firebase?</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="mensajeTxt" placeholder="Escribe un mensaje...">
+        <button onclick="enviar()">↑</button>
+    </div>
+
+    <script type="module">
+        // AQUÍ CONECTAREMOS FIREBASE EN EL SIGUIENTE PASO
+        window.enviar = function() {
+            const txt = document.getElementById('mensajeTxt').value;
+            if(!txt) return;
+            
+            // Simulación de envío
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="msg sent">${txt}</div>`;
+            document.getElementById('mensajeTxt').value = "";
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>
