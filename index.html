@@ -3,34 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Chat Privado</title>
+    <title>WhatsApp Lite</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #E5DDD5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 100px; }
-        .msg { max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 16px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .sent { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 2px; }
-        .received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
-        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 15px; display: flex; gap: 10px; box-sizing: border-box; padding-bottom: 30px; }
-        input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; font-size: 16px; outline: none; -webkit-appearance: none; }
-        button { background: #007AFF; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; font-weight: bold; flex-shrink: 0; }
+        body { font-family: -apple-system, sans-serif; background: #E5DDD5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Cabecera estilo iOS */
+        .header { background: #075E54; color: white; padding: 40px 20px 15px; text-align: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 100px; }
+        
+        /* Estilo de burbujas */
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 15px; position: relative; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-info { font-size: 10px; opacity: 0.6; display: block; margin-bottom: 3px; font-weight: bold; }
+
+        /* Mis mensajes (Derecha - Verde) */
+        .sent { align-self: flex-end; background: #DCF8C6; border-top-right-radius: 2px; color: #000; }
+        
+        /* Mensajes de otros (Izquierda - Blanco) */
+        .received { align-self: flex-start; background: #FFFFFF; border-top-left-radius: 2px; color: #000; }
+
+        .input-area { position: fixed; bottom: 0; width: 100%; background: #F0F0F0; padding: 10px; display: flex; gap: 8px; box-sizing: border-box; padding-bottom: 30px; }
+        input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #DDD; font-size: 16px; outline: none; }
+        button { background: #075E54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; flex-shrink: 0; }
     </style>
 </head>
 <body>
 
+    <div class="header" id="app-title">Chat Privado</div>
     <div id="chat-box"></div>
 
     <div class="input-area">
         <input type="text" id="mensajeTxt" placeholder="Escribe un mensaje..." autocomplete="off">
-        <button id="btnEnviar">↑</button>
+        <button id="btnEnviar">➤</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Tus llaves oficiales
         const firebaseConfig = {
             apiKey: "AIzaSyDGxQiwmvlOeYh3GZXV_2Eg-cYilXGDsCw",
             authDomain: "chat-40714.firebaseapp.com",
@@ -45,34 +57,45 @@
         const db = getDatabase(app);
         const chatRef = ref(db, "mensajes");
 
+        // --- Lógica de Identificación ---
+        let miNombre = localStorage.getItem("nombreUsuario");
+        if (!miNombre) {
+            miNombre = prompt("¿Cuál es tu nombre?") || "Usuario Desconocido";
+            localStorage.setItem("nombreUsuario", miNombre);
+        }
+        document.getElementById("app-title").textContent = "Hola, " + miNombre;
+
         const input = document.getElementById('mensajeTxt');
         const box = document.getElementById('chat-box');
 
-        // Función para enviar
         window.enviarMensaje = function() {
             const txt = input.value.trim();
             if(txt !== "") {
-                push(chatRef, { texto: txt, fecha: Date.now() })
-                .then(() => { console.log("Mensaje enviado"); })
-                .catch((err) => { alert("Error: " + err.message); });
+                push(chatRef, { 
+                    nombre: miNombre,
+                    texto: txt, 
+                    fecha: Date.now() 
+                });
                 input.value = "";
             }
         };
 
-        // Click en el botón
         document.getElementById('btnEnviar').onclick = enviarMensaje;
+        input.addEventListener("keypress", (e) => { if (e.key === "Enter") enviarMensaje(); });
 
-        // Enviar con la tecla Enter del teclado del iPhone
-        input.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") enviarMensaje();
-        });
-
-        // Escuchar mensajes nuevos
+        // --- Recibir Mensajes y Pintar Colores ---
         onChildAdded(chatRef, (snapshot) => {
             const data = snapshot.val();
+            const esMio = (data.nombre === miNombre); // ¿El nombre es el mío?
+
             const div = document.createElement("div");
-            div.className = "msg received"; // Todos salen a la izquierda para esta prueba inicial
-            div.textContent = data.texto;
+            div.className = esMio ? "msg sent" : "msg received";
+            
+            div.innerHTML = `
+                <span class="msg-info">${esMio ? 'Tú' : data.nombre}</span>
+                ${data.texto}
+            `;
+            
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         });
